@@ -1,0 +1,15 @@
+{
+    "id": "botble/paymentwall",
+    "name": "Paymentwall Payment Gateway",
+    "namespace": "Botble\\Paymentwall\\",
+    "provider": "Botble\\Paymentwall\\Providers\\PaymentwallServiceProvider",
+    "author": "Tected LLC",
+    "url": "https://tected.co",
+    "version": "1.0.0",
+    "description": "Paymentwall payment gateway integration",
+    "minimum_core_version": "7.3.0",
+    "require": [
+        "botble/payment"
+    ],
+    "source": "./platform/plugins/paymentwall"
+}
