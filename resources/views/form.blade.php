@@ -1,9 +1,16 @@
-<div class="payment-form">
-    <h3>{{ trans('plugins/paymentwall::paymentwall.payment_description') }}</h3>
-    <form action="{{ route('paymentwall.pay') }}" method="POST">
-        @csrf
-        <button type="submit" class="btn btn-primary">
-            {{ trans('plugins/paymentwall::paymentwall.pay_now') }}
-        </button>
-    </form>
-</div>
+<form action="{{ $action }}" method="post">
+    @foreach($data as $key => $value)
+        <input type="hidden" name="{{ $key }}" value="{{ $value }}"/>
+    @endforeach
+    <button type="submit" style="display: none">{{ __('Submit') }}</button>
+</form>
+
+<p>{{ __('Redirecting to Paymentwall...') }}</p>
+
+<script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelector('form').submit();
+    });
+</script>

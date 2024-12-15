@@ -1,11 +1,12 @@
 <?php
 
 use Botble\Paymentwall\Http\Controllers\PaymentwallController;
+use Illuminate\Support\Facades\Route;
 
-Route::group(['namespace' => 'Botble\Paymentwall\Http\Controllers', 'middleware' => ['web', 'core']], function () {
-    // Route to initiate the payment
-    Route::post('paymentwall/pay', [PaymentwallController::class, 'pay'])->name('paymentwall.pay');
+Route::middleware(['core', 'web'])->prefix('payment/paymentwall')->name('payment.paymentwall.')->group(function () {
+    Route::get('callback', [PaymentwallController::class, 'callback'])->name('callback');
+});
 
-    // Route for the callback from Paymentwall after payment
-    Route::post('paymentwall/callback', [PaymentwallController::class, 'callback'])->name('paymentwall.callback');
+Route::middleware(['core'])->prefix('payment/paymentwall')->name('payment.paymentwall.')->group(function () {
+    Route::post('webhook', [PaymentwallController::class, 'webhook'])->name('webhook');
 });

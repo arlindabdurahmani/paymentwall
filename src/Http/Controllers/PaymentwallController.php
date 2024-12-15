@@ -2,71 +2,127 @@
 
 namespace Botble\Paymentwall\Http\Controllers;
 
+use Botble\Base\Http\Controllers\BaseController;
+use Botble\Base\Http\Responses\BaseHttpResponse;
+use Botble\Ecommerce\Models\Customer;
+use Botble\Hotel\Models\Booking;
+use Botble\Payment\Enums\PaymentStatusEnum;
+use Botble\Payment\Supports\PaymentHelper;
+use Botble\Paymentwall\Providers\PaymentwallServiceProvider;
+use Botble\Paymentwall\Services\PaymentwallService;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Paymentwall_Base;
-use Paymentwall_Product;
-use Paymentwall_Widget;
+use Illuminate\Support\Arr;
 
-class PaymentwallController extends Controller
+class PaymentwallController extends BaseController
 {
-    /**
-     * Initiate a Paymentwall payment
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function pay(Request $request)
-    {
-        // Configure Paymentwall API
-        Paymentwall_Base::setApiType(Paymentwall_Base::API_GOODS);
-        Paymentwall_Base::setAppKey(env('PAYMENTWALL_PUBLIC_KEY'));
-        Paymentwall_Base::setSecretKey(env('PAYMENTWALL_SECRET_KEY'));
-
-        // Create a Paymentwall widget
-        $widget = new Paymentwall_Widget(
-            $request->user()->id, // User ID
-            'p1', // Widget Code
-            [
-                new Paymentwall_Product(
-                    'product_id',
-                    $request->input('amount', 10.00), // Amount
-                    $request->input('currency', 'USD'), // Currency
-                    $request->input('description', 'Sample Product'), // Description
-                    Paymentwall_Product::TYPE_FIXED // Product Type
-                ),
-            ],
-            [
-                'success_url' => route('paymentwall.callback'),
-                'cancel_url' => url()->previous(),
-            ]
-        );
-
-        // Redirect to the Paymentwall widget URL
-        return redirect($widget->getUrl());
-    }
-
-    /**
-     * Handle Paymentwall callback
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function callback(Request $request)
-    {
-        // Paymentwall Pingback verification
-        $pingback = new \Paymentwall_Pingback($request->all(), $request->ip());
-
-        if ($pingback->validate()) {
-            if ($pingback->isDeliverable()) {
-                // Handle successful transaction (e.g., update order status)
-                return response()->json(['status' => 'success', 'message' => 'Payment successful!']);
-            } elseif ($pingback->isCancelable()) {
-                // Handle canceled transaction
-                return response()->json(['status' => 'canceled', 'message' => 'Payment canceled.']);
-            }
+    public function callback(
+        Request $request,
+        BaseHttpResponse $response,
+        PaymentwallService $paymentwallService
+    ): BaseHttpResponse {
+        if (! $request->input('transaction_id')) {
+            return $response
+                ->setError()
+                ->setNextUrl(PaymentHelper::getCancelURL());
         }
 
-        return response()->json(['status' => 'error', 'message' => 'Invalid callback.'], 400);
+        $result = $paymentwallService->queryTransaction($request->input('transaction_id'));
+
+        if (! $result) {
+            return $response
+                ->setError()
+                ->setNextUrl(PaymentHelper::getCancelURL());
+        }
+
+        $data = $result['data'];
+
+        switch ($data['status']) {
+            case 'successful':
+                $status = PaymentStatusEnum::COMPLETED;
+                break;
+
+            case 'failure':
+                $status = PaymentStatusEnum::FAILED;
+                break;
+
+            default:
+                $status = PaymentStatusEnum::PENDING;
+                break;
+        }
+
+        if ($status === PaymentStatusEnum::FAILED) {
+            return $response
+                ->setError()
+                ->setNextUrl(PaymentHelper::getCancelURL())
+                ->setMessage($request->input('error_message'));
+        }
+
+        do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
+            'order_id' => $orderId = json_decode($data['meta']['order_id']),
+            'amount' => $data['amount'],
+            'currency' => $data['currency'],
+            'charge_id' => $data['id'],
+            'payment_channel' => PaymentwallServiceProvider::MODULE_NAME,
+            'status' => $status,
+            'customer_id' => $data['meta']['customer_id'],
+            'customer_type' => $data['meta']['customer_type'],
+            'payment_type' => 'direct',
+        ], $request);
+
+        if (is_plugin_active('hotel')) {
+            $booking = Booking::query()
+                ->select('transaction_id')
+                ->find(Arr::first($orderId));
+
+            if (! $booking) {
+                return $response
+                    ->setNextUrl(PaymentHelper::getCancelURL())
+                    ->setMessage(__('Checkout failed!'));
+            }
+
+            return $response
+                ->setNextUrl(PaymentHelper::getRedirectURL($booking->transaction_id))
+                ->setMessage(__('Checkout successfully!'));
+        }
+
+        $nextUrl = PaymentHelper::getRedirectURL($data['meta']['token']);
+
+        if (is_plugin_active('job-board') || is_plugin_active('real-estate')) {
+            $nextUrl = $nextUrl . '?charge_id=' . $data['id'];
+        }
+
+        return $response
+            ->setNextUrl($nextUrl)
+            ->setMessage(__('Checkout successfully!'));
+    }
+
+    public function webhook(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (! $data) {
+            return;
+        }
+
+        $status = match ($data['status']) {
+            'successful' => PaymentStatusEnum::COMPLETED,
+            'failure' => PaymentStatusEnum::FAILED,
+            default => PaymentStatusEnum::PENDING,
+        };
+
+        if ($status === PaymentStatusEnum::FAILED) {
+            return;
+        }
+
+        do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
+            'order_id' => json_decode($data['meta']['order_id']),
+            'amount' => $data['amount'],
+            'charge_id' => $data['id'],
+            'payment_channel' => PaymentwallServiceProvider::MODULE_NAME,
+            'status' => $status,
+            'customer_id' => $data['customer']['id'],
+            'customer_type' => Customer::class,
+            'payment_type' => 'direct',
+        ], $request);
     }
 }

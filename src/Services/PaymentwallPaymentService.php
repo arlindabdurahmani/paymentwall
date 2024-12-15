@@ -2,53 +2,38 @@
 
 namespace Botble\Paymentwall\Services;
 
-use Paymentwall_Widget;
-use Paymentwall_Product;
-
 class PaymentwallPaymentService
 {
     /**
-     * Create a Paymentwall widget for payment.
+     * Check if online refunds are supported.
      *
-     * @param string $userId
-     * @param array $products
-     * @param string $callbackUrl
-     * @return Paymentwall_Widget
+     * @return bool
      */
-    public function createWidget($userId, array $products, $callbackUrl)
+    public function getSupportRefundOnline(): bool
     {
-        // Initialize the API
-        PaymentwallService::initialize();
-
-        // Create the widget
-        return new Paymentwall_Widget(
-            $userId, // User ID
-            'p1', // Widget Code
-            $products, // Products for purchase
-            [
-                'success_url' => $callbackUrl, // Callback URL for success
-                'cancel_url' => url()->previous(), // Cancel URL
-            ]
-        );
+        return true;
     }
 
     /**
-     * Create a product for Paymentwall widget.
+     * Process a refund for an order.
      *
-     * @param string $id
+     * @param string $paymentId
      * @param float $amount
-     * @param string $currency
-     * @param string $description
-     * @return Paymentwall_Product
+     * @return mixed
      */
-    public function createProduct($id, $amount, $currency, $description)
+    public function refundOrder(string $paymentId, float $amount)
     {
-        return new Paymentwall_Product(
-            $id, // Product ID
-            $amount, // Price
-            $currency, // Currency (e.g., USD)
-            $description, // Product description
-            Paymentwall_Product::TYPE_FIXED // Product type
-        );
+        return (new PaymentwallService())->refundOrder($paymentId, $amount);
+    }
+
+    /**
+     * Get payment details using the Paymentwall service.
+     *
+     * @param string $paymentId
+     * @return mixed
+     */
+    public function getPaymentDetails(string $paymentId)
+    {
+        return (new PaymentwallService())->queryTransaction($paymentId);
     }
 }
