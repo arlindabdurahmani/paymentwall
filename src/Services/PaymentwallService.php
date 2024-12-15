@@ -3,16 +3,11 @@
 namespace Botble\Paymentwall\Services;
 
 use Botble\Paymentwall\Providers\PaymentwallServiceProvider;
-use Illuminate\Support\Facades\Http;
 
 class PaymentwallService
 {
     protected string $publicKey;
-
     protected string $secretKey;
-
-    protected string $baseApiUrl = 'https://api.paymentwall.com/api';
-
     protected array $data = [];
 
     public function __construct()
@@ -25,31 +20,34 @@ class PaymentwallService
     {
         $this->data = $data;
 
-        $this->withAdditionalData();
-
         return $this;
     }
 
     public function redirectToCheckoutPage(): void
     {
+        $widgetUrl = $this->getWidgetUrl();
+
         echo view('plugins/paymentwall::form', [
-            'data' => $this->data,
-            'action' => $this->getPaymentUrl(),
+            'action' => $widgetUrl,
+            'data' => [],
         ]);
 
         exit();
     }
 
-    protected function getPaymentUrl(): string
+    protected function getWidgetUrl(): string
     {
-        return $this->baseApiUrl . '/payment';
-    }
+        $params = [
+            'key' => $this->publicKey,
+            'uid' => $this->data['customer_id'] ?? 'guest', // Replace with actual user ID
+            'goodsid' => $this->data['meta']['order_id'], // Product or order ID
+            'amount' => $this->data['amount'],
+            'currency' => $this->data['currency'],
+            'success_url' => route('payment.paymentwall.callback'),
+            'cancel_url' => PaymentHelper::getCancelURL(),
+        ];
 
-    protected function withAdditionalData(): void
-    {
-        $this->data = array_merge($this->data, [
-            'key' => $this->getPublicKey(),
-        ]);
+        return 'https://www.paymentwall.com/api/ps/?' . http_build_query($params);
     }
 
     public function getPublicKey(): string
@@ -60,44 +58,5 @@ class PaymentwallService
     public function getSecretKey(): string
     {
         return $this->secretKey;
-    }
-
-    public function queryTransaction(string $referenceNumber)
-    {
-        $response = Http::asJson()
-            ->withHeaders(['Authorization' => $this->getSecretKey()])
-            ->withoutVerifying()
-            ->get($this->baseApiUrl . '/rest/transactions/' . $referenceNumber);
-
-        if (! $response->ok()) {
-            return [
-                'error' => true,
-                'message' => $response->reason(),
-            ];
-        }
-
-        return $response->json();
-    }
-
-    public function refundOrder(string $chargeId, float $amount): array
-    {
-        $response = Http::asJson()
-            ->withHeaders(['Authorization' => $this->getSecretKey()])
-            ->withoutVerifying()
-            ->post($this->baseApiUrl . '/rest/transactions/' . $chargeId . '/refund', [
-                'amount' => $amount,
-            ]);
-
-        if ($response->status() == 400) {
-            return [
-                'error' => true,
-                'message' => __('Refunds are not enabled by default on Paymentwall accounts. You may need to contact Paymentwall support to enable this feature.'),
-            ];
-        }
-
-        return [
-            'error' => $response->failed(),
-            'message' => $response->json('message'),
-        ];
     }
 }

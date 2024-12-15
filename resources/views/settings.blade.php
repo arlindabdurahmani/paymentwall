@@ -10,7 +10,7 @@
         <td class="border-right">
             <ul>
                 <li>
-                    <a href="https://paymentwall.com" target="_blank">{{ $name }}</a>
+                    <a href="https://www.paymentwall.com/" target="_blank">{{ $name }}</a>
                     <p>{{ trans('plugins/paymentwall::paymentwall.description') }}</p>
                 </li>
             </ul>
@@ -30,8 +30,8 @@
             </div>
         </td>
     </tr>
-    <tr class="paypal-online-payment payment-content-item hidden">
-        <td class="border-left" colspan="3">
+    <tr class="payment-content-item hidden">
+        <td colspan="3">
             <form>
                 <input type="hidden" name="type" value="{{ $moduleName }}" class="payment_type">
 
@@ -50,10 +50,7 @@
                                         </a>
                                     </li>
                                     <li style="list-style-type:decimal">
-                                        <p>{{ trans('plugins/payment::payment.paymentwall_after_service_registration_msg', ['name' => $name]) }}</p>
-                                    </li>
-                                    <li style="list-style-type:decimal">
-                                        <p>{{ trans('plugins/payment::payment.enter_client_id_and_secret') }}</p>
+                                        <p>{{ trans('plugins/payment::payment.enter_public_and_secret_key', ['name' => $name]) }}</p>
                                     </li>
                                 </ul>
                             </li>
@@ -70,14 +67,14 @@
 
                             <x-core-setting::form-group>
                                 <label class="text-title-field" for="payment_paymentwall_description">{{ trans('core/base::forms.description') }}</label>
-                                <textarea class="next-input" name="payment_paymentwall_description" id="payment_paymentwall_description">{{ get_payment_setting('description', $moduleName, __('Payment with Paymentwall')) }}</textarea>
+                                <textarea class="next-input" name="payment_paymentwall_description" id="payment_paymentwall_description">{{ get_payment_setting('description', $moduleName, __('Payment via Paymentwall')) }}</textarea>
                             </x-core-setting::form-group>
 
                             <x-core-setting::text-input
                                 :name="'payment_' . $moduleName . '_public_key'"
                                 :label="trans('plugins/paymentwall::paymentwall.public_key')"
                                 :value="get_payment_setting('public_key', $moduleName)"
-                                placeholder="xxxxxx"
+                                placeholder="Enter your Public Key"
                             />
 
                             <x-core-setting::text-input
@@ -85,15 +82,7 @@
                                 :label="trans('plugins/paymentwall::paymentwall.secret_key')"
                                 :value="get_payment_setting('secret_key', $moduleName)"
                                 type="password"
-                                placeholder="xxxxxxxx"
-                            />
-
-                            <x-core-setting::text-input
-                                :name="'payment_' . $moduleName . '_encryption_key'"
-                                :label="trans('plugins/paymentwall::paymentwall.encryption_key')"
-                                :value="get_payment_setting('encryption_key', $moduleName)"
-                                type="password"
-                                placeholder="xxxxxxxx"
+                                placeholder="Enter your Secret Key"
                             />
 
                             {!! apply_filters(PAYMENT_METHOD_SETTINGS_CONTENT, null, $moduleName) !!}

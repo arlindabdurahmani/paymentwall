@@ -19,9 +19,9 @@ class PaymentwallPaymentService
      *
      * @param string $paymentId
      * @param float $amount
-     * @return mixed
+     * @return array
      */
-    public function refundOrder(string $paymentId, float $amount)
+    public function refundOrder(string $paymentId, float $amount): array
     {
         return (new PaymentwallService())->refundOrder($paymentId, $amount);
     }
@@ -30,9 +30,9 @@ class PaymentwallPaymentService
      * Get payment details using the Paymentwall service.
      *
      * @param string $paymentId
-     * @return mixed
+     * @return array|null
      */
-    public function getPaymentDetails(string $paymentId)
+    public function getPaymentDetails(string $paymentId): ?array
     {
         return (new PaymentwallService())->queryTransaction($paymentId);
     }
