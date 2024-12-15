@@ -3,10 +3,11 @@
 namespace Botble\Paymentwall\Services;
 
 use Botble\Paymentwall\Providers\PaymentwallServiceProvider;
+use Illuminate\Support\Facades\Http;
 
 class PaymentwallService
 {
-    protected string $projectKey; // Also referred to as Public Key
+    protected string $projectKey;
     protected string $secretKey;
     protected string $baseWidgetUrl = 'https://www.paymentwall.com/api/ps';
     protected string $baseApiUrl = 'https://api.paymentwall.com/api/rest';
@@ -52,6 +53,16 @@ class PaymentwallService
         return $this->baseWidgetUrl . '/?' . http_build_query($params);
     }
 
+    public function getProjectKey(): string
+    {
+        return $this->projectKey;
+    }
+
+    public function getSecretKey(): string
+    {
+        return $this->secretKey;
+    }
+
     public function queryTransaction(string $transactionId)
     {
         $response = Http::asJson()
@@ -59,7 +70,7 @@ class PaymentwallService
             ->withoutVerifying()
             ->get($this->baseApiUrl . '/transactions/' . $transactionId);
 
-        if (! $response->ok()) {
+        if (!$response->ok()) {
             return [
                 'error' => true,
                 'message' => $response->reason(),
