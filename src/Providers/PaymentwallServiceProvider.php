@@ -25,7 +25,19 @@ class PaymentwallServiceProvider extends ServiceProvider
     {
         $this
             ->loadRoutes(['web']) // Load the routes for the plugin
-            ->loadViews() // Load the views for the plugin
-            ->publishAssets(); // Publish assets (e.g., images, scripts)
+            ->loadAndPublishViews() // Correct way to load and publish views
+            ->publishAssets(); // Publish plugin assets
+    }
+
+    /**
+     * Load and publish views for the plugin
+     *
+     * @return $this
+     */
+    protected function loadAndPublishViews()
+    {
+        $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'paymentwall');
+
+        return $this;
     }
 }
