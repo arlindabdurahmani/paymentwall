@@ -2,27 +2,30 @@
 
 namespace Botble\Paymentwall\Providers;
 
-use Botble\Base\Traits\LoadAndPublishDataTrait;
 use Illuminate\Support\ServiceProvider;
+use Botble\Base\Traits\LoadAndPublishDataTrait;
 
 class PaymentwallServiceProvider extends ServiceProvider
 {
     use LoadAndPublishDataTrait;
 
+    /**
+     * Register services
+     */
     public function register()
     {
-        $this->app->bind('PaymentwallService', function () {
-            return new \Botble\Paymentwall\Services\PaymentwallService();
-        });
+        $this->setNamespace('plugins/paymentwall')
+            ->loadHelpers();
     }
 
+    /**
+     * Boot the plugin
+     */
     public function boot()
     {
-        $this->setNamespace('plugins/paymentwall')
-            ->loadAndPublishConfigurations(['general'])
-            ->loadRoutes(['web'])
-            ->loadAndPublishViews()
-            ->loadAndPublishTranslations()
-            ->loadMigrations();
+        $this
+            ->loadRoutes(['web']) // Load the routes for the plugin
+            ->loadViews() // Load the views for the plugin
+            ->publishAssets(); // Publish assets (e.g., images, scripts)
     }
 }

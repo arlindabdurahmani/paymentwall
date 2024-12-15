@@ -5,7 +5,7 @@
     "provider": "Botble\\Paymentwall\\Providers\\PaymentwallServiceProvider",
     "author": "Tected LLC",
     "url": "https://tected.co",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Paymentwall payment gateway integration",
     "minimum_core_version": "7.3.0",
     "require": [
