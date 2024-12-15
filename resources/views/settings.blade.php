@@ -50,7 +50,10 @@
                                         </a>
                                     </li>
                                     <li style="list-style-type:decimal">
-                                        <p>{{ trans('plugins/payment::payment.enter_public_and_secret_key', ['name' => $name]) }}</p>
+                                        <p>{{ trans('plugins/payment::payment.paymentwall_after_service_registration_msg', ['name' => $name]) }}</p>
+                                    </li>
+                                    <li style="list-style-type:decimal">
+                                        <p>{{ trans('plugins/payment::payment.enter_project_and_secret_key') }}</p>
                                     </li>
                                 </ul>
                             </li>
@@ -67,14 +70,14 @@
 
                             <x-core-setting::form-group>
                                 <label class="text-title-field" for="payment_paymentwall_description">{{ trans('core/base::forms.description') }}</label>
-                                <textarea class="next-input" name="payment_paymentwall_description" id="payment_paymentwall_description">{{ get_payment_setting('description', $moduleName, __('Payment via Paymentwall')) }}</textarea>
+                                <textarea class="next-input" name="payment_paymentwall_description" id="payment_paymentwall_description">{{ get_payment_setting('description', $moduleName, __('Pay securely with Paymentwall')) }}</textarea>
                             </x-core-setting::form-group>
 
                             <x-core-setting::text-input
-                                :name="'payment_' . $moduleName . '_public_key'"
-                                :label="trans('plugins/paymentwall::paymentwall.public_key')"
-                                :value="get_payment_setting('public_key', $moduleName)"
-                                placeholder="Enter your Public Key"
+                                :name="'payment_' . $moduleName . '_project_key'"
+                                :label="trans('plugins/paymentwall::paymentwall.project_key')"
+                                :value="get_payment_setting('project_key', $moduleName)"
+                                placeholder="Enter your Project Key"
                             />
 
                             <x-core-setting::text-input
